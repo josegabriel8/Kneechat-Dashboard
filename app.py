@@ -2,8 +2,11 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 
-# Cargar datos (ajusta según tu archivo)
+# ---------------------------
+# Cargar dataset principal y mapeos
+# ---------------------------
 df = pd.read_excel("bd_c_gpt.xlsx")
 
 # Diccionario de mapeo para categorias1 (códigos del 1 al 10)
@@ -20,7 +23,6 @@ DudasFrecuentes = {
     10: "Logística y tiempos de espera"             
 }
 
-# Crear una nueva columna con los labels cortos para categorias1
 df['DudasFrecuentes'] = df['categorias1'].map(DudasFrecuentes)
 
 # Diccionario de mapeo para categorias2 (códigos del 1 al 6)
@@ -32,16 +34,13 @@ map_cat2 = {
     5: "Rutina diaria",               
     6: "Otros"                  
 }
-
-# Crear una nueva columna con los labels cortos para categorias2
 df['Tiporeflexión'] = df['categorias2'].map(map_cat2)
 
-# Configuración de la página
+# ---------------------------
+# Configuración de la página y encabezados
+# ---------------------------
 st.set_page_config(page_title="Dashboard de Análisis de Texto", layout="wide")
-
-# Título principal
 st.title("📊 Dashboard de Análisis de Comentarios y Preguntas")
-
 
 st.header("Información del estudio")
 st.write("""
@@ -59,23 +58,49 @@ st.write("""
   1️⃣ **Duda/Pregunta:** Frases en las que el paciente expresa una necesidad de información.  
   2️⃣ **Comentario/Reflexión:** Frases dirigidas al entrevistador (doctor) que contienen información relevante sobre sus circunstancias, sentimientos, preocupaciones, etc.  
   3️⃣ **Interacciones no relevantes:** Saludaciones, despedidas, afirmaciones genéricas u otros comentarios sin valor para el estudio.  
-
 """)
 
+# ---------------------------
+# Aumentar tamaño de fuente general mediante CSS
+# ---------------------------
+st.markdown(
+    """
+    <style>
+    p, div[class^="css"] {
+        font-size: 30px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-total_pacientes = 41
+# ---------------------------
+# 1. Indicadores (Cards)
+# ---------------------------
+entrevistas_count = 41
+frases_relevantes = df.shape[0]
 
-# Identificar pacientes únicos por tipo
+st.markdown("### Indicadores Generales")
+
+col_card1, col_card2, col_card3, col_card4 = st.columns(4)
+col_card1.metric("Entrevistas realizadas", entrevistas_count,  border=True)
+col_card2.metric("Número total de frases de pacientes", 623, border=True)
+col_card3.metric("Frases relevantes", frases_relevantes, border=True)
+col_card4.metric("Preguntas o dudas", 54, border=True)
+
+# ---------------------------
+# 2. Primer gráfico interactivo y tabla de frases
+# ---------------------------
+# Preparar datos para el gráfico 1
+total_pacientes = 41  # valor fijo según estudio
 comentario_ids = df[df["Tipo"] == "Comentario/reflexión"]["num_entrevista"].unique()
 duda_ids = df[df["Tipo"] == "Duda/pregunta"]["num_entrevista"].unique()
 union_ids = set(comentario_ids) | set(duda_ids)
 
-# Contar pacientes por cada grupo
 comentarios_count = len(comentario_ids)
 dudas_count = len(duda_ids)
 sin_registro = total_pacientes - len(union_ids)
 
-# Preparar DataFrame para el gráfico
 data = {
     "Tipo": ["Comentario/reflexión", "Duda/pregunta", "Sin interacción relevante"],
     "Entrevistas": [comentarios_count, dudas_count, sin_registro]
@@ -83,67 +108,54 @@ data = {
 df_plot = pd.DataFrame(data)
 df_plot["Porcentaje"] = df_plot["Entrevistas"] / total_pacientes * 100
 
-# Configurar estilo sin grid
-sns.set_style("white")
+# Agregar los valores fijos para el tooltip
+fixed_total_frases = {
+    "Comentario/reflexión": 227,
+    "Duda/pregunta": 54,
+    "Sin interacción relevante": 347
+}
+df_plot["TotalFrases"] = df_plot["Tipo"].map(fixed_total_frases)
 
-# Gráfico 1: Frecuencia de entrevistas
-fig, ax = plt.subplots(figsize=(10, 4))
-sns.barplot(
+# Crear gráfico interactivo con Plotly Express
+fig1 = px.bar(
+    df_plot,
     x="Tipo",
     y="Entrevistas",
-    data=df_plot,
-    order=["Comentario/reflexión", "Duda/pregunta", "Sin interacción"],
-    color="#cf5c36",  # Color modificado a cf5c36
-    ax=ax
+    text=df_plot["Porcentaje"].apply(lambda x: f"{x:.1f}%"),
+    hover_data={"TotalFrases": True, "Entrevistas": True},
+    color_discrete_sequence=["#34a3d3"] 
 )
+fig1.update_layout(
+    xaxis_title="",
+    title_text="Frecuencia de entrevistas por tipo de información recogida"
+)
+fig1.update_traces(textposition='outside')
 
-# Agregar borde a cada barra
-for patch in ax.patches:
-    patch.set_edgecolor("black")
-    patch.set_linewidth(1.5)
+# Cargar dataset de frases irrelevantes (frasesfull.xlsx)
+df_frases = pd.read_excel("frasesfull.xlsx")
 
-ax.set_title("Frecuencia de entrevistas por tipo de información recogida", fontsize=12)
-ax.set_ylabel("Número de entrevistas", fontsize=10)
-ylim_max = df_plot["Entrevistas"].max() + 5  
-ax.set_ylim(0, ylim_max)
+st.markdown('<h3 style="text-align: center;">Categorización General y Ejemplos de Frases</h3>', unsafe_allow_html=True)
+col_chart, col_table = st.columns(2)
+with col_chart:
+    st.plotly_chart(fig1, use_container_width=True)
+with col_table:
+    selected_tipo_frase = st.selectbox("Selecciona el tipo de frase", df_frases["tipo"].unique())
+    filtered_frases = df_frases[df_frases["tipo"] == selected_tipo_frase].reset_index(drop=True)
+    st.dataframe(filtered_frases[["frase"]].reset_index(drop=True), use_container_width=True)
 
-# Anotar porcentaje en cada barra
-for index, row in df_plot.iterrows():
-    y_value = row["Entrevistas"] + 0.5
-    if index == 0 and y_value > ylim_max - 1:
-        y_value = row["Entrevistas"] - 0.5
-        va = "top"
-    else:
-        va = "bottom"
-    ax.text(index, y_value, f'{row["Porcentaje"]:.1f}%', ha='center', va=va, fontsize=14)
-
-plt.tight_layout()
-st.pyplot(fig)
+# ---------------------------
+# 3. Reorganización de Gráficos 2 y 3 con sus Tablas
+# ---------------------------
+st.markdown("## Análisis Detallado por Categorías")
 
 
-# ---- Gráficos 2 y 3: Frecuencia por categoría con filtro y lado a lado ----
 st.subheader("--------------------------------------------------------")
 st.header("Frases y pacientes por categoría")
 
 st.write("📌 **En una segunda fase, la clasificación se profundizó aún más utilizando inteligencia artificial.**")
-# Clasificación de comentarios/reflexiones
-st.subheader("📌 Clasificación de comentarios/reflexiones")
-
-st.write("""
-Para las frases en las que los pacientes expresaban reflexiones o comentarios, que fueron **225**, se establecieron las siguientes categorías:
-
-✅ **Dolor/Complicaciones:** Relacionadas con dolor, sufrimiento o complicaciones físicas derivadas de la rodilla.  
-✅ **Deseo de operarse:** Expresan urgencia por la cirugía o críticas sobre la espera prolongada.  
-✅ **Miedo/Preocupación/Ansiedad:** Reflejan angustia, miedo o inquietudes respecto a la cirugía o el postoperatorio.  
-✅ **Confianza y Positividad:** Demuestran seguridad y optimismo respecto al procedimiento y el equipo médico.  
-✅ **Rutina diaria:** Describen de manera neutral la vida cotidiana del paciente.  
-✅ **Otros:** Frases que no encajan en las categorías anteriores.  
-""")
-
-# Clasificación de dudas/preguntas
 st.subheader("📌 Clasificación de dudas/preguntas")
 st.write("""
-Las frases que reflejaban **necesidad de información (51 en total)** fueron categorizadas con base en la guía de **Preguntas Frecuentes sobre Prótesis Total de Rodilla**, que abarca los siguientes temas:
+Las frases que reflejaban **necesidad de información (54 en total)** fueron categorizadas con base en la guía de **Preguntas Frecuentes sobre Prótesis Total de Rodilla**, que abarca los siguientes temas:
 
 1️⃣ **Información general sobre la artroplastia de rodilla:** Explica qué es el procedimiento, su necesidad y comparaciones con otras intervenciones.  
 2️⃣ **Preparación para la cirugía:** Consejos sobre cómo prepararse física y mentalmente, incluyendo cambios en el estilo de vida y adaptaciones en el hogar.  
@@ -159,107 +171,107 @@ Las frases que reflejaban **necesidad de información (51 en total)** fueron cat
 🕒 **Logística y tiempos de espera:** Debido a la cantidad de preguntas sobre este tema, se agregó una categoría específica para abordar consultas sobre tiempos de espera, costos, trámites administrativos y pruebas preoperatorias.  
 """)
 
+# 3.1 Dudas/Preguntas: gráfico y tabla de ejemplos
+st.markdown("### Dudas/Preguntas")
+col_dudas_chart, col_dudas_table = st.columns(2)
 
-
-
-
-# Botón de filtro para seleccionar qué columnas mostrar
-tipo_seleccionado = st.multiselect(
-    "Selecciona qué frecuencia mostrar:",
-    ["Frases", "Pacientes"],
-    default=["Frases", "Pacientes"]
-)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown("### Dudas/Preguntas")
-    # Agrupar datos para Dudas
+with col_dudas_chart:
+    tipo_seleccionado_dudas = st.multiselect(
+       "Selecciona qué frecuencia mostrar (Dudas):",
+       ["Frases", "Pacientes"],
+       default=["Frases", "Pacientes"]
+    )
     df_dudas = df.groupby("DudasFrecuentes").agg(
         Frases=("DudasFrecuentes", "count"),
         Pacientes=("num_entrevista", "nunique")
     ).reset_index().sort_values(by="Frases", ascending=False)
-    
-    # Convertir a formato largo
     df_dudas_melted = df_dudas.melt(id_vars="DudasFrecuentes", var_name="Tipo", value_name="Frecuencia")
-    # Filtrar según selección
-    df_dudas_melted = df_dudas_melted[df_dudas_melted["Tipo"].isin(tipo_seleccionado)]
+    df_dudas_melted = df_dudas_melted[df_dudas_melted["Tipo"].isin(tipo_seleccionado_dudas)]
     
-    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    fig2, ax2 = plt.subplots(figsize=(8, 5))
     sns.barplot(
         data=df_dudas_melted,
         x="DudasFrecuentes",
         y="Frecuencia",
         hue="Tipo",
-        palette={"Frases": "#cf5c36", "Pacientes": "#93B7BE"},
+        palette={"Frases": "#34a3d3", "Pacientes": "#b7b7bd"}, 
         ax=ax2
     )
     ax2.set_xticklabels(ax2.get_xticklabels(), rotation=45, ha="right")
-    ax2.set_xlabel("Categoría de Dudas")
     ax2.set_ylabel("Frecuencia")
+    ax2.set_xlabel("")
     ax2.legend(title="Tipo")
     for container in ax2.containers:
-        ax2.bar_label(container, fmt='%d', label_type='edge', fontsize=12)
+        ax2.bar_label(container, fmt='%d', label_type='edge', fontsize=10)
     plt.tight_layout()
     st.pyplot(fig2)
 
-with col2:
-    st.markdown("### Reflexiones/Comentarios")
-    # Agrupar datos para Reflexiones
+with col_dudas_table:
+    categoria_dudas = st.selectbox(
+        "Selecciona una categoría de dudas:",
+        df["DudasFrecuentes"].dropna().unique()
+    )
+    df_dudas_table = df[df["DudasFrecuentes"] == categoria_dudas][["num_entrevista", "frase"]]
+    df_dudas_table = df_dudas_table.set_index("num_entrevista")
+    st.dataframe(df_dudas_table, use_container_width=True)
+
+
+# 3.2 Reflexiones/Comentarios: gráfico y tabla de ejemplos
+st.markdown("### Reflexiones/Comentarios")
+
+st.subheader("📌 Clasificación de comentarios/reflexiones")
+
+st.write("""
+Para las frases en las que los pacientes expresaban reflexiones o comentarios, que fueron **225**, se establecieron las siguientes categorías:
+
+✅ **Dolor/Complicaciones:** Relacionadas con dolor, sufrimiento o complicaciones físicas derivadas de la rodilla.  
+✅ **Deseo de operarse:** Expresan urgencia por la cirugía o críticas sobre la espera prolongada.  
+✅ **Miedo/Preocupación/Ansiedad:** Reflejan angustia, miedo o inquietudes respecto a la cirugía o el postoperatorio.  
+✅ **Confianza y Positividad:** Demuestran seguridad y optimismo respecto al procedimiento y el equipo médico.  
+✅ **Rutina diaria:** Describen de manera neutral la vida cotidiana del paciente.  
+✅ **Otros:** Frases que no encajan en las categorías anteriores.  
+""")
+
+
+
+col_reflexion_chart, col_reflexion_table = st.columns(2)
+
+with col_reflexion_chart:
+    tipo_seleccionado_reflexion = st.multiselect(
+       "Selecciona qué frecuencia mostrar (Reflexiones):",
+       ["Frases", "Pacientes"],
+       default=["Frases", "Pacientes"]
+    )
     df_reflexion = df.groupby("Tiporeflexión").agg(
         Frases=("Tiporeflexión", "count"),
         Pacientes=("num_entrevista", "nunique")
     ).reset_index().sort_values(by="Frases", ascending=False)
-    
-    # Convertir a formato largo
     df_reflexion_melted = df_reflexion.melt(id_vars="Tiporeflexión", var_name="Tipo", value_name="Frecuencia")
-    # Filtrar según selección
-    df_reflexion_melted = df_reflexion_melted[df_reflexion_melted["Tipo"].isin(tipo_seleccionado)]
+    df_reflexion_melted = df_reflexion_melted[df_reflexion_melted["Tipo"].isin(tipo_seleccionado_reflexion)]
     
-    fig3, ax3 = plt.subplots(figsize=(10, 6))
+    fig3, ax3 = plt.subplots(figsize=(8, 5))
     sns.barplot(
         data=df_reflexion_melted,
         x="Tiporeflexión",
         y="Frecuencia",
         hue="Tipo",
-        palette={"Frases": "#cf5c36", "Pacientes": "#93B7BE"},
+        palette={"Frases": "#34a3d3", "Pacientes": "#b7b7bd"}, 
         ax=ax3
     )
     ax3.set_xticklabels(ax3.get_xticklabels(), rotation=45, ha="right")
-    ax3.set_xlabel("Categoría de Reflexión")
     ax3.set_ylabel("Frecuencia")
+    ax3.set_xlabel("")
     ax3.legend(title="Tipo")
     for container in ax3.containers:
-        ax3.bar_label(container, fmt='%d', label_type='edge', fontsize=12)
+        ax3.bar_label(container, fmt='%d', label_type='edge', fontsize=10)
     plt.tight_layout()
     st.pyplot(fig3)
-
-
-st.subheader("--------------------------------------------------------")
-st.header("Muestra de frases")
-
-# ---- Ejemplos de preguntas/dudas por categoría ----
-st.subheader("🎯 Ejemplos de preguntas/dudas por categoría")
-# Se elimina el NaN del selectbox
-categoria_dudas = st.selectbox(
-    "Selecciona una categoría de dudas:",
-    df["DudasFrecuentes"].dropna().unique()
-)
-# Se crea un DataFrame con las columnas 'num_entrevista' y 'frase'
-df_dudas_table = df[df["DudasFrecuentes"] == categoria_dudas][["num_entrevista", "frase"]]
-# Se establece 'num_entrevista' como índice para reemplazar el índice predeterminado
-df_dudas_table = df_dudas_table.set_index("num_entrevista")
-st.dataframe(df_dudas_table, use_container_width=True)
-
-# ---- Ejemplos de reflexiones/comentarios por categoría ----
-st.subheader("🎯 Ejemplos de reflexiones/comentarios por categoría")
-# Se elimina el NaN del selectbox
-categoria_reflexion = st.selectbox(
-    "Selecciona una categoría comentario:",
-    df["Tiporeflexión"].dropna().unique()
-)
-# Se crea un DataFrame con las columnas 'num_entrevista' y 'frase'
-df_reflexion_table = df[df["Tiporeflexión"] == categoria_reflexion][["num_entrevista", "frase"]]
-# Se establece 'num_entrevista' como índice para reemplazar el índice predeterminado
-df_reflexion_table = df_reflexion_table.set_index("num_entrevista")
-st.dataframe(df_reflexion_table, use_container_width=True)
+    
+with col_reflexion_table:
+    categoria_reflexion = st.selectbox(
+        "Selecciona una categoría de comentario:",
+        df["Tiporeflexión"].dropna().unique()
+    )
+    df_reflexion_table = df[df["Tiporeflexión"] == categoria_reflexion][["num_entrevista", "frase"]]
+    df_reflexion_table = df_reflexion_table.set_index("num_entrevista")
+    st.dataframe(df_reflexion_table, use_container_width=True)
