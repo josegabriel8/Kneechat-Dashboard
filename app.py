@@ -228,6 +228,8 @@ with col_dudas_table:
     df_dudas_table = df_dudas_table.set_index("num_entrevista")
     st.dataframe(df_dudas_table, use_container_width=True)
 
+st.subheader("--------------------------------------------------------")
+st.subheader("--------------------------------------------------------")
 
 # 3.2 Reflexiones/Comentarios: gráfico y tabla de ejemplos
 st.markdown("### Reflexiones/Comentarios")
