@@ -263,3 +263,147 @@ df_reflexion_table = df[df["Tiporeflexión"] == categoria_reflexion][["num_entre
 # Se establece 'num_entrevista' como índice para reemplazar el índice predeterminado
 df_reflexion_table = df_reflexion_table.set_index("num_entrevista")
 st.dataframe(df_reflexion_table, use_container_width=True)
+
+
+###############################################
+#############################################
+
+
+
+import plotly.express as px
+import pandas as pd
+
+# Filtrar solo el tipo "Comentario/reflexión"
+df_comentarioreflexion = df[df["Tipo"] == "Comentario/reflexión"].copy()
+df_comentarioreflexion['num_entrevista'] = df_comentarioreflexion['num_entrevista'].astype(str)
+
+# Agrupar por 'num_entrevista' y calcular la media, SEM y cantidad de frases
+df_grouped = df_comentarioreflexion.groupby('num_entrevista', as_index=False).agg({
+    'sent_robertuito': ['mean', 'sem', 'count']
+})
+df_grouped.columns = ['num_entrevista', 'mean_robertuito', 'sem_robertuito', 'count_frases']
+
+# Clasificar sentimiento (se asume que la función clasificar_sentimiento está definida)
+df_grouped['Sentimiento'] = df_grouped['mean_robertuito'].apply(clasificar_sentimiento)
+
+# Calcular el intervalo de confianza (IC ~95%)
+df_grouped['ci_robertuito'] = 1.96 * df_grouped['sem_robertuito']
+
+# Mapeo de colores para cada categoría de sentimiento
+color_dict = {
+    "Muy negativo": "darkred",
+    "Negativo": "lightcoral",
+    "Neutral": "gray",
+    "Positivo": "lightgreen",
+    "Muy positivo": "darkgreen"
+}
+
+# Crear gráfico interactivo con Plotly Express
+fig_sentimiento = px.scatter(
+    df_grouped,
+    x="num_entrevista",
+    y="mean_robertuito",
+    color="Sentimiento",
+    color_discrete_map=color_dict,
+    error_y="ci_robertuito",
+    labels={
+        "num_entrevista": "Número de Entrevista",
+        "mean_robertuito": "Puntuación de Sentimiento"
+    },
+    title="Comparación de Sentimientos Promedio por Entrevista (IC ~95%)",
+    hover_data={
+        "count_frases": True,
+        "mean_robertuito": ':.2f',
+        "ci_robertuito": ':.2f',
+        "num_entrevista": False  # ya se muestra en el eje x
+    }
+)
+
+# Agregar líneas horizontales de referencia
+fig_sentimiento.add_hline(y=0.3, line_dash="dash", line_color="green", opacity=0.3)
+fig_sentimiento.add_hline(y=0, line_dash="dash", line_color="grey", opacity=0.3)
+fig_sentimiento.add_hline(y=-0.3, line_dash="dash", line_color="red", opacity=0.3)
+
+# Actualizar hovertemplate para incluir información detallada
+fig_sentimiento.update_traces(
+    hovertemplate=(
+        "<b>Entrevista: %{x}</b><br>" +
+        "Puntuación: %{y:.2f}<br>" +
+        "IC: ±%{error_y:.2f}<br>" +
+        "Cantidad de frases: %{customdata[0]}<extra></extra>"
+    ),
+    customdata=df_grouped[['count_frases']].values
+)
+
+# Sección "Análisis de Sentimiento"
+st.markdown("## Análisis de Sentimiento")
+st.plotly_chart(fig_sentimiento, use_container_width=True)
+
+import plotly.express as px
+import pandas as pd
+
+# Filtrar solo el tipo "Comentario/reflexión"
+df_comentarioreflexion = df[df["Tipo"] == "Comentario/reflexión"].copy()
+df_comentarioreflexion['num_entrevista'] = df_comentarioreflexion['num_entrevista'].astype(str)
+
+# Agrupar por 'num_entrevista' y calcular la media, SEM y cantidad de frases
+df_grouped = df_comentarioreflexion.groupby('num_entrevista', as_index=False).agg({
+    'sent_robertuito': ['mean', 'sem', 'count']
+})
+df_grouped.columns = ['num_entrevista', 'mean_robertuito', 'sem_robertuito', 'count_frases']
+
+# Clasificar sentimiento (se asume que la función clasificar_sentimiento está definida)
+df_grouped['Sentimiento'] = df_grouped['mean_robertuito'].apply(clasificar_sentimiento)
+
+# Calcular el intervalo de confianza (IC ~95%)
+df_grouped['ci_robertuito'] = 1.96 * df_grouped['sem_robertuito']
+
+# Mapeo de colores para cada categoría de sentimiento
+color_dict = {
+    "Muy negativo": "darkred",
+    "Negativo": "lightcoral",
+    "Neutral": "gray",
+    "Positivo": "lightgreen",
+    "Muy positivo": "darkgreen"
+}
+
+# Crear gráfico interactivo con Plotly Express
+fig_sentimiento = px.scatter(
+    df_grouped,
+    x="num_entrevista",
+    y="mean_robertuito",
+    color="Sentimiento",
+    color_discrete_map=color_dict,
+    error_y="ci_robertuito",
+    labels={
+        "num_entrevista": "Número de Entrevista",
+        "mean_robertuito": "Puntuación de Sentimiento"
+    },
+    title="Comparación de Sentimientos Promedio por Entrevista (IC ~95%)",
+    hover_data={
+        "count_frases": True,
+        "mean_robertuito": ':.2f',
+        "ci_robertuito": ':.2f',
+        "num_entrevista": False  # ya se muestra en el eje x
+    }
+)
+
+# Agregar líneas horizontales de referencia
+fig_sentimiento.add_hline(y=0.3, line_dash="dash", line_color="green", opacity=0.3)
+fig_sentimiento.add_hline(y=0, line_dash="dash", line_color="grey", opacity=0.3)
+fig_sentimiento.add_hline(y=-0.3, line_dash="dash", line_color="red", opacity=0.3)
+
+# Actualizar hovertemplate para incluir información detallada
+fig_sentimiento.update_traces(
+    hovertemplate=(
+        "<b>Entrevista: %{x}</b><br>" +
+        "Puntuación: %{y:.2f}<br>" +
+        "IC: ±%{error_y:.2f}<br>" +
+        "Cantidad de frases: %{customdata[0]}<extra></extra>"
+    ),
+    customdata=df_grouped[['count_frases']].values
+)
+
+# Sección "Análisis de Sentimiento"
+st.markdown("## Análisis de Sentimiento")
+st.plotly_chart(fig_sentimiento, use_container_width=True)

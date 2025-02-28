@@ -81,12 +81,22 @@ entrevistas_count = 41
 frases_relevantes = df.shape[0]
 
 st.markdown("### Indicadores Generales")
-
 col_card1, col_card2, col_card3, col_card4 = st.columns(4)
-col_card1.metric("Entrevistas realizadas", entrevistas_count,  border=True)
-col_card2.metric("Número total de frases de pacientes", 623, border=True)
-col_card3.metric("Frases relevantes", frases_relevantes, border=True)
-col_card4.metric("Preguntas o dudas", 54, border=True)
+
+# Definir estilo para todas las cards con un color uniforme
+card_style_general = """
+    <div style="padding: 10px; border-radius: 10px; background-color: #b7b7bd; text-align: center; color: white;">
+        <h4 style="margin: 0;">{title}</h4>
+        <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">{value}</p>
+    </div>
+"""
+
+# Mostrar los cards con el mismo color azul
+col_card1.markdown(card_style_general.format(title="Entrevistas realizadas", value=entrevistas_count), unsafe_allow_html=True)
+col_card2.markdown(card_style_general.format(title="Número total de frases de pacientes", value=623), unsafe_allow_html=True)
+col_card3.markdown(card_style_general.format(title="Frases relevantes", value=frases_relevantes), unsafe_allow_html=True)
+col_card4.markdown(card_style_general.format(title="Preguntas o dudas", value=54), unsafe_allow_html=True)
+
 
 # ---------------------------
 # 2. Primer gráfico interactivo y tabla de frases
@@ -146,14 +156,17 @@ with col_table:
 # ---------------------------
 # 3. Reorganización de Gráficos 2 y 3 con sus Tablas
 # ---------------------------
+
+st.subheader("--------------------------------------------------------")
+
+
 st.markdown("## Análisis Detallado por Categorías")
 
 
-st.subheader("--------------------------------------------------------")
 st.header("Frases y pacientes por categoría")
 
-st.write("📌 **En una segunda fase, la clasificación se profundizó aún más utilizando inteligencia artificial.**")
-st.subheader("📌 Clasificación de dudas/preguntas")
+st.write("**En una segunda fase, la clasificación se profundizó aún más utilizando inteligencia artificial.**")
+st.subheader("❓ Clasificación de dudas/preguntas")
 st.write("""
 Las frases que reflejaban **necesidad de información (54 en total)** fueron categorizadas con base en la guía de **Preguntas Frecuentes sobre Prótesis Total de Rodilla**, que abarca los siguientes temas:
 
@@ -275,3 +288,186 @@ with col_reflexion_table:
     df_reflexion_table = df[df["Tiporeflexión"] == categoria_reflexion][["num_entrevista", "frase"]]
     df_reflexion_table = df_reflexion_table.set_index("num_entrevista")
     st.dataframe(df_reflexion_table, use_container_width=True)
+
+
+
+###########################################
+
+
+st.subheader("--------------------------------------------------------")
+st.subheader("--------------------------------------------------------")
+
+def clasificar_sentimiento(sent):
+    if sent < -0.6:
+        return 'Muy negativo'
+    elif sent < -0.3:
+        return 'Negativo'
+    elif sent > 0.6:
+        return 'Muy positivo'
+    elif sent > 0.3:
+        return 'Positivo'
+    else:
+        return 'Neutral'
+
+# Crear la columna 'Sentimiento'
+df['Sentimiento'] = df['sent_robertuito'].apply(clasificar_sentimiento)
+
+
+import plotly.express as px
+import pandas as pd
+
+# Filtrar solo el tipo "Comentario/reflexión"
+df_comentarioreflexion = df[df["Tipo"] == "Comentario/reflexión"].copy()
+df_comentarioreflexion['num_entrevista'] = df_comentarioreflexion['num_entrevista'].astype(str)
+
+# Agrupar por 'num_entrevista' y calcular la media, SEM y cantidad de frases
+df_grouped = df_comentarioreflexion.groupby('num_entrevista', as_index=False).agg({
+    'sent_robertuito': ['mean', 'sem', 'count']
+})
+df_grouped.columns = ['num_entrevista', 'mean_robertuito', 'sem_robertuito', 'count_frases']
+
+# Clasificar sentimiento (se asume que la función clasificar_sentimiento está definida)
+df_grouped['Sentimiento'] = df_grouped['mean_robertuito'].apply(clasificar_sentimiento)
+
+# Calcular el intervalo de confianza (IC ~95%)
+df_grouped['ci_robertuito'] = 1.96 * df_grouped['sem_robertuito']
+
+# Mapeo de colores para cada categoría de sentimiento
+color_dict = {
+    "Muy negativo": "darkred",
+    "Negativo": "lightcoral",
+    "Neutral": "gray",
+    "Positivo": "lightgreen",
+    "Muy positivo": "darkgreen"
+}
+
+df_grouped['point_size'] = 12
+# Crear gráfico interactivo con Plotly Express
+fig_sentimiento = px.scatter(
+    df_grouped,
+    x=df_grouped.index,
+    y="mean_robertuito",
+    color="Sentimiento",
+    color_discrete_map=color_dict,
+    error_y="ci_robertuito",
+    labels={
+        "num_entrevista": "Número de Entrevista",
+        "mean_robertuito": "Puntuación de Sentimiento"
+    },
+    title="Comparación de Sentimientos Promedio por Entrevista (IC ~95%)",
+    size= "point_size",
+    hover_data={
+        "count_frases": True,
+        "mean_robertuito": ':.2f',
+        "num_entrevista": False  # ya se muestra en el eje x
+    }
+)
+
+fig_sentimiento.update_layout(
+    title_x=0.4  # Centra el título horizontalmente
+
+)
+# Agregar líneas horizontales de referencia
+fig_sentimiento.add_hline(y=0.3, line_dash="dash", line_color="green", opacity=0.3)
+fig_sentimiento.add_hline(y=0, line_dash="dash", line_color="grey", opacity=0.3)
+fig_sentimiento.add_hline(y=-0.3, line_dash="dash", line_color="red", opacity=0.3)
+
+# Actualizar hovertemplate para incluir información detallada
+fig_sentimiento.update_traces(
+    hovertemplate=(
+        "<b>Entrevista: %{customdata[1]}</b><br>" +
+        "Puntuación: %{y:.2f}<br>" +
+        "Cantidad de frases: %{customdata[0]}<extra></extra>"
+    ),
+    customdata=df_grouped[['count_frases', 'num_entrevista']].values,
+
+    
+)
+
+# Sección "Análisis de Sentimiento"
+st.markdown("## Análisis de Sentimiento")
+
+st.write("El análisis de sentimiento es una técnica de procesamiento del lenguaje natural que permite identificar y evaluar las emociones expresadas en un texto. En este caso, se aplica a los comentarios y reflexiones obtenidos en las entrevistas para determinar si el tono general es positivo, negativo o neutral.")
+
+st.write("La puntuación de sentimiento se representa en una escala de -1 a 1, donde los valores negativos indican sentimientos negativos, los valores positivos reflejan sentimientos positivos y los valores cercanos a 0 representan un tono neutral. Esta puntuación se obtiene mediante modelos de análisis de texto y permite identificar patrones emocionales en los datos recopilados.")
+
+st.write("*Para esta parte del Análisis se usaron solo las frases categorizadas como Comentario/reflexión ya que eran las que expresaban algún sentimiento o emoción*")
+
+
+st.markdown("### Datos Generales")
+
+col_card5, col_card6, col_card7, col_card8 = st.columns(4)
+
+
+card_style = """
+    <div style="padding: 10px; border-radius: 10px; background-color: {bg_color}; text-align: center; color: white;">
+        <h4 style="margin: 0;">{title}</h4>
+        <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">{value}</p>
+    </div>
+"""
+
+# Mostrar los cards con colores personalizados
+col_card5.markdown(card_style.format(title="Promedio General de Sentimiento", value="-0.22", bg_color="#FF4B4B"), unsafe_allow_html=True)
+col_card6.markdown(card_style.format(title="Entrevistas Negativas (Promedio)", value="12", bg_color="#D9534F"), unsafe_allow_html=True)
+col_card7.markdown(card_style.format(title="Entrevistas Positivas (Promedio)", value="3", bg_color="#5CB85C"), unsafe_allow_html=True)
+col_card8.markdown(card_style.format(title="Entrevistas Neutras", value="18", bg_color="#5BC0DE"), unsafe_allow_html=True)
+
+
+st.plotly_chart(fig_sentimiento, use_container_width=True)
+
+
+################################
+
+import plotly.express as px
+sentiment_order = ["Muy negativo", "Negativo", "Neutral", "Positivo", "Muy positivo"]
+
+# Contar cantidad de frases por categoría de sentimiento
+sentiment_counts = df_comentarioreflexion["Sentimiento"].value_counts().reindex(sentiment_order, fill_value=0)
+sentiment_percent = (sentiment_counts / sentiment_counts.sum()) * 100  # Convertir a porcentaje
+
+# Crear DataFrame para visualización
+df_percent = pd.DataFrame({
+    "Sentimiento": sentiment_order,
+    "Porcentaje": sentiment_percent.values,
+    "Cantidad de frases": sentiment_counts.values
+})
+
+# Crear gráfico de barras con Plotly
+fig_sentimiento_bar = px.bar(
+    df_percent,
+    x="Sentimiento",
+    y="Porcentaje",
+    text="Porcentaje",
+    color="Sentimiento",
+    color_discrete_map=color_dict,
+    labels={"Porcentaje": "Porcentaje (%)"},
+    title="Porcentaje de Frases por Categoría de Sentimiento",
+    hover_data={"Cantidad de frases": True}
+)
+
+fig_sentimiento_bar.update_layout(
+    title_x=0.4  # Centra el título horizontalmente
+
+)
+
+# Ajustar formato de etiquetas sobre las barras
+fig_sentimiento_bar.update_traces(
+    texttemplate="%{text:.1f}%",
+    textposition="outside",
+    hovertemplate="<b>%{x}</b><br>Porcentaje: %{y:.1f}%<br>Cantidad de frases: %{customdata[0]}<extra></extra>",
+    customdata=df_percent[["Cantidad de frases"]].values
+)
+
+# Sección "Distribución de Sentimiento"
+st.markdown("## Distribución de Sentimiento")
+st.plotly_chart(fig_sentimiento_bar, use_container_width=True)
+
+
+#categoria_sentimiento = st.selectbox(
+#        "Selecciona una categoría de sentimiento:",
+#        df_comentarioreflexion["Sentimiento"].dropna().unique()
+#    )
+df__table = df_comentarioreflexion[["frase","sent_robertuito","Tiporeflexión", "Sentimiento"]]
+
+
+st.dataframe(df__table, use_container_width=True)
