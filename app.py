@@ -473,3 +473,10 @@ df__table = df_comentarioreflexion[["frase","sent_robertuito","Tiporeflexión", 
 
 
 st.dataframe(df__table, use_container_width=True)
+
+
+
+#########################
+########################
+
+
