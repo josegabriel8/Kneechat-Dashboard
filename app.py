@@ -204,20 +204,21 @@ with col_dudas_chart:
     fig2, ax2 = plt.subplots(figsize=(8, 5))
     sns.barplot(
         data=df_dudas_melted,
-        x="DudasFrecuentes",
-        y="Frecuencia",
+        x="Frecuencia",
+        y="DudasFrecuentes",
         hue="Tipo",
-        palette={"Frases": "#34a3d3", "Pacientes": "#b7b7bd"}, 
+        palette={"Frases": "#34a3d3", "Pacientes": "#b7b7bd"},
         ax=ax2
     )
-    ax2.set_xticklabels(ax2.get_xticklabels(), rotation=45, ha="right")
-    ax2.set_ylabel("Frecuencia")
-    ax2.set_xlabel("")
+    ax2.set_yticklabels(ax2.get_yticklabels(), rotation=0, ha="right")
+    ax2.set_xlabel("Frecuencia")
+    ax2.set_ylabel("")
     ax2.legend(title="Tipo")
     for container in ax2.containers:
         ax2.bar_label(container, fmt='%d', label_type='edge', fontsize=10)
     plt.tight_layout()
     st.pyplot(fig2)
+
 
 with col_dudas_table:
     categoria_dudas = st.selectbox(
@@ -267,21 +268,21 @@ with col_reflexion_chart:
     fig3, ax3 = plt.subplots(figsize=(8, 5))
     sns.barplot(
         data=df_reflexion_melted,
-        x="Tiporeflexión",
-        y="Frecuencia",
+        x="Frecuencia",
+        y="Tiporeflexión",
         hue="Tipo",
-        palette={"Frases": "#34a3d3", "Pacientes": "#b7b7bd"}, 
+        palette={"Frases": "#34a3d3", "Pacientes": "#b7b7bd"},
         ax=ax3
     )
-    ax3.set_xticklabels(ax3.get_xticklabels(), rotation=45, ha="right")
-    ax3.set_ylabel("Frecuencia")
-    ax3.set_xlabel("")
+    ax3.set_yticklabels(ax3.get_yticklabels(), rotation=0, ha="right")
+    ax3.set_xlabel("Frecuencia")
+    ax3.set_ylabel("")
     ax3.legend(title="Tipo")
     for container in ax3.containers:
         ax3.bar_label(container, fmt='%d', label_type='edge', fontsize=10)
     plt.tight_layout()
     st.pyplot(fig3)
-    
+
 with col_reflexion_table:
     categoria_reflexion = st.selectbox(
         "Selecciona una categoría de comentario:",
