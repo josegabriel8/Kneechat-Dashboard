@@ -40,7 +40,7 @@ df['Tiporeflexión'] = df['categorias2'].map(map_cat2)
 # Configuración de la página y encabezados
 # ---------------------------
 st.set_page_config(page_title="Dashboard de Análisis de Texto", layout="wide")
-st.title("📊 Dashboard de Análisis de Comentarios y Preguntas")
+st.title("📊 Dashboard de KneeChat")
 
 st.header("Información del estudio")
 st.write("""
@@ -377,7 +377,7 @@ fig_sentimiento.add_hline(y=-0.3, line_dash="dash", line_color="red", opacity=0.
 # Actualizar hovertemplate para incluir información detallada
 fig_sentimiento.update_traces(
     hovertemplate=(
-        "<b>Entrevista: %{customdata[1]}</b><br>" +
+        "<b>Entrevista: %{x}</b><br>" +
         "Puntuación: %{y:.2f}<br>" +
         "Cantidad de frases: %{customdata[0]}<extra></extra>"
     ),
@@ -409,10 +409,10 @@ card_style = """
 """
 
 # Mostrar los cards con colores personalizados
-col_card5.markdown(card_style.format(title="Promedio General de Sentimiento", value="-0.22", bg_color="#FF4B4B"), unsafe_allow_html=True)
-col_card6.markdown(card_style.format(title="Entrevistas Negativas (Promedio)", value="12", bg_color="#D9534F"), unsafe_allow_html=True)
-col_card7.markdown(card_style.format(title="Entrevistas Positivas (Promedio)", value="3", bg_color="#5CB85C"), unsafe_allow_html=True)
-col_card8.markdown(card_style.format(title="Entrevistas Neutras", value="18", bg_color="#5BC0DE"), unsafe_allow_html=True)
+col_card5.markdown(card_style.format(title="Promedio General de Sentimiento", value="*-0.22* \nIC:[-0.281, -0.149]", bg_color="#FF4B4B"), unsafe_allow_html=True)
+col_card6.markdown(card_style.format(title="Entrevistas Negativas (Promedio)", value="12 (40%)", bg_color="#D9534F"), unsafe_allow_html=True)
+col_card7.markdown(card_style.format(title="Entrevistas Positivas (Promedio)", value="3 (10%)", bg_color="#5CB85C"), unsafe_allow_html=True)
+col_card8.markdown(card_style.format(title="Entrevistas Neutras", value="15 (50%)", bg_color="#5BC0DE"), unsafe_allow_html=True)
 
 
 st.plotly_chart(fig_sentimiento, use_container_width=True)
@@ -420,12 +420,19 @@ st.plotly_chart(fig_sentimiento, use_container_width=True)
 
 ################################
 
-import plotly.express as px
+# Definir el orden de sentimientos y los colores
 sentiment_order = ["Muy negativo", "Negativo", "Neutral", "Positivo", "Muy positivo"]
+color_dict = {
+    "Muy negativo": "darkred",
+    "Negativo": "lightcoral",
+    "Neutral": "gray",
+    "Positivo": "lightgreen",
+    "Muy positivo": "darkgreen"
+}
 
 # Contar cantidad de frases por categoría de sentimiento
 sentiment_counts = df_comentarioreflexion["Sentimiento"].value_counts().reindex(sentiment_order, fill_value=0)
-sentiment_percent = (sentiment_counts / sentiment_counts.sum()) * 100  # Convertir a porcentaje
+sentiment_percent = (sentiment_counts / sentiment_counts.sum()) * 100
 
 # Crear DataFrame para visualización
 df_percent = pd.DataFrame({
@@ -433,36 +440,44 @@ df_percent = pd.DataFrame({
     "Porcentaje": sentiment_percent.values,
     "Cantidad de frases": sentiment_counts.values
 })
+df_percent["dummy"] = "Total"  # Columna dummy para generar una única barra
 
-# Crear gráfico de barras con Plotly
+# Crear gráfico de barra 100% apilado horizontalmente con Plotly Express,
+# usando custom_data para que cada segmento tenga su "Cantidad de frases"
 fig_sentimiento_bar = px.bar(
     df_percent,
-    x="Sentimiento",
-    y="Porcentaje",
-    text="Porcentaje",
+    x="Cantidad de frases",
+    y="dummy",
     color="Sentimiento",
+    text="Porcentaje",
+    orientation="h",
+    custom_data=["Cantidad de frases"],
     color_discrete_map=color_dict,
-    labels={"Porcentaje": "Porcentaje (%)"},
+    labels={"Cantidad de frases": "Cantidad de frases", "dummy": ""},
     title="Porcentaje de Frases por Categoría de Sentimiento",
     hover_data={"Cantidad de frases": True}
 )
 
+# Configurar el gráfico para que sea 100% apilado
 fig_sentimiento_bar.update_layout(
-    title_x=0.4  # Centra el título horizontalmente
-
+    barmode="stack",
+    barnorm="percent",
+    title_x=0.4
 )
 
-# Ajustar formato de etiquetas sobre las barras
+# Actualizar formato de etiquetas y tooltips:
+# - Texto centrado, en negrita y de mayor tamaño dentro de cada segmento.
+# - Tooltip que muestra correctamente la cantidad de frases de cada segmento.
 fig_sentimiento_bar.update_traces(
     texttemplate="%{text:.1f}%",
-    textposition="outside",
-    hovertemplate="<b>%{x}</b><br>Porcentaje: %{y:.1f}%<br>Cantidad de frases: %{customdata[0]}<extra></extra>",
-    customdata=df_percent[["Cantidad de frases"]].values
+    textposition="inside",
+    textfont=dict(size=18, color="white", family="Arial Black"),
+    hovertemplate="<b>%{fullData.name}</b><br>Porcentaje: %{x:.1f}%<br>Cantidad de frases: %{customdata[0]}<extra></extra>"
 )
 
-# Sección "Distribución de Sentimiento"
 st.markdown("## Distribución de Sentimiento")
 st.plotly_chart(fig_sentimiento_bar, use_container_width=True)
+
 
 
 #categoria_sentimiento = st.selectbox(
