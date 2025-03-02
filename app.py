@@ -85,7 +85,7 @@ col_card1, col_card2, col_card3, col_card4 = st.columns(4)
 
 # Definir estilo para todas las cards con un color uniforme
 card_style_general = """
-    <div style="padding: 10px; border-radius: 10px; background-color: #b7b7bd; text-align: center; color: white;">
+    <div style="padding: 10px; border-radius: 10px; background-color: #34a3d3; text-align: center; color: white;">
         <h4 style="margin: 0;">{title}</h4>
         <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">{value}</p>
     </div>
