@@ -42,10 +42,10 @@ Este tablero analiza datos de 41 entrevistas con pacientes en espera de cirugía
 
 ✅ Librerias Utilizadas
 
-Streamlit (frontend interactivo)
-Pandas + NumPy (procesamiento de datos)
-Plotly + Matplotlib + Seaborn (visualizaciones)
-Robertuito (modelo de análisis de sentimiento en español) 
+* Streamlit (frontend interactivo)
+* Pandas + NumPy (procesamiento de datos)
+* Plotly + Matplotlib + Seaborn (visualizaciones)
+* Robertuito (modelo de análisis de sentimiento en español) 
 
 ## Datos
 Los datos utilizados (disponibles bajo solicitud) incluyen:
