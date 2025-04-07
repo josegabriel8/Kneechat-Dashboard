@@ -53,7 +53,8 @@ Los datos utilizados (disponibles bajo solicitud) incluyen:
 * frasesfull.xlsx: Ejemplos completos de interacciones
 
 
-https://kneechat-dashboard.streamlit.app/
-Open in Streamlit
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://kneechat-dashboard.streamlit.app/)
+
 
 
