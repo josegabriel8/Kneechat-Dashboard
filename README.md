@@ -2,6 +2,8 @@
 
 Dashboard interactivo para analizar necesidades de información y sentimientos en pacientes pre-quirúrgicos de artroplastia total de rodilla, desarrollado con Python y Streamlit.
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://kneechat-dashboard.streamlit.app/)
+
 
 ## Contexto del Estudio:
 Desarrollado como parte de la investigación:
@@ -53,7 +55,6 @@ Los datos utilizados (disponibles bajo solicitud) incluyen:
 * frasesfull.xlsx: Ejemplos completos de interacciones
 
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://kneechat-dashboard.streamlit.app/)
 
 
 
