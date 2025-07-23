@@ -103,8 +103,8 @@ col_card4.markdown(card_style_general.format(title="Preguntas o dudas", value=54
 # ---------------------------
 # Preparar datos para el gráfico 1
 total_pacientes = 41  # valor fijo según estudio
-comentario_ids = df[df["Tipo"] == "Comentario/reflexión"]["num_entrevista"].unique()
-duda_ids = df[df["Tipo"] == "Duda/pregunta"]["num_entrevista"].unique()
+comentario_ids = df[df["tipo"] == "Comentario/reflexión"]["num_entrevista"].unique()
+duda_ids = df[df["tipo"] == "Duda/pregunta"]["num_entrevista"].unique()
 union_ids = set(comentario_ids) | set(duda_ids)
 
 comentarios_count = len(comentario_ids)
@@ -112,7 +112,7 @@ dudas_count = len(duda_ids)
 sin_registro = total_pacientes - len(union_ids)
 
 data = {
-    "Tipo": ["Comentario/reflexión", "Duda/pregunta", "Sin interacción relevante"],
+    "tipo": ["Comentario/reflexión", "Duda/pregunta", "Sin interacción relevante"],
     "Entrevistas": [comentarios_count, dudas_count, sin_registro]
 }
 df_plot = pd.DataFrame(data)
@@ -124,12 +124,12 @@ fixed_total_frases = {
     "Duda/pregunta": 54,
     "Sin interacción relevante": 347
 }
-df_plot["TotalFrases"] = df_plot["Tipo"].map(fixed_total_frases)
+df_plot["TotalFrases"] = df_plot["tipo"].map(fixed_total_frases)
 
 # Crear gráfico interactivo con Plotly Express
 fig1 = px.bar(
     df_plot,
-    x="Tipo",
+    x="tipo",
     y="Entrevistas",
     text=df_plot["Porcentaje"].apply(lambda x: f"{x:.1f}%"),
     hover_data={"TotalFrases": True, "Entrevistas": True},
