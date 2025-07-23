@@ -320,7 +320,7 @@ import plotly.express as px
 import pandas as pd
 
 # Filtrar solo el tipo "Comentario/reflexión"
-df_comentarioreflexion = df[df["Tipo"] == "Comentario/reflexión"].copy()
+df_comentarioreflexion = df[df["tipo"] == "Comentario/reflexión"].copy()
 df_comentarioreflexion['num_entrevista'] = df_comentarioreflexion['num_entrevista'].astype(str)
 
 # Agrupar por 'num_entrevista' y calcular la media, SEM y cantidad de frases
