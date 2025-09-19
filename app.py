@@ -8,6 +8,8 @@ import plotly.express as px
 # Cargar dataset principal y mapeos
 # ---------------------------
 df = pd.read_excel("bd_c_gpt.xlsx")
+df_frases = pd.read_excel("frasesfull.xlsx")
+
 
 # Diccionario de mapeo para categorias1 (códigos del 1 al 10)
 DudasFrecuentes = {
@@ -24,6 +26,7 @@ DudasFrecuentes = {
 }
 
 df['DudasFrecuentes'] = df['categorias1'].map(DudasFrecuentes)
+df_frases['DudasFrecuentes'] = df_frases['categorias1'].map(DudasFrecuentes)
 
 # Diccionario de mapeo para categorias2 (códigos del 1 al 6)
 map_cat2 = {
@@ -35,6 +38,7 @@ map_cat2 = {
     6: "Otros"                  
 }
 df['Tiporeflexión'] = df['categorias2'].map(map_cat2)
+df_frases['Tiporeflexión'] = df_frases['categorias2'].map(map_cat2)
 
 # ---------------------------
 # Configuración de la página y encabezados
@@ -44,10 +48,10 @@ st.title("📊 Dashboard de KneeChat")
 
 st.header("Información del estudio")
 st.write("""
-**Este tablero presenta la información recopilada en el estudio:**
-**'Empleo de canales de comunicación digitales para la evaluación y detección de necesidades de información en pacientes pendientes de intervención de Artroplastia Total de Rodilla.'**
+**Este tablero presenta la información cualitativa recopilada en el estudio:**
+**'Empleo de canales de comunicación digitales para la evaluación y detección de necesidades de información en pacientes pendientes de intervención de Artroplastia Total de Rodilla.'** Cuyo investigador principal es el Dr. Manuel Zapatero del Hospital Universitario Costa del Sol (Marbella, España).
 
-- Los datos fueron recolectados a través de **41 entrevistas telefónicas** realizadas a pacientes con diagnóstico de **gonartrosis de rodilla** y con un procedimiento pendiente codificado como **sustitución total de rodilla**.
+- Los datos fueron recolectados a través de **41 entrevistas telefónicas** realizadas a pacientes con diagnóstico de **gonartrosis de rodilla** y con un procedimiento pendiente de Artroplastia Total de Rodilla.
 """)
 
 st.header("Análisis de intervenciones/frases recogidas por pacientes en las entrevistas")
@@ -93,65 +97,155 @@ card_style_general = """
 
 # Mostrar los cards con el mismo color azul
 col_card1.markdown(card_style_general.format(title="Entrevistas realizadas", value=entrevistas_count), unsafe_allow_html=True)
-col_card2.markdown(card_style_general.format(title="Número total de frases de pacientes", value=623), unsafe_allow_html=True)
-col_card3.markdown(card_style_general.format(title="Frases relevantes", value=frases_relevantes), unsafe_allow_html=True)
+col_card2.markdown(card_style_general.format(title="Número total de frases de pacientes", value=635), unsafe_allow_html=True)
+col_card3.markdown(card_style_general.format(title="Comentarios espontáneos", value=230), unsafe_allow_html=True)
 col_card4.markdown(card_style_general.format(title="Preguntas o dudas", value=54), unsafe_allow_html=True)
 
 
-# ---------------------------
-# 2. Primer gráfico interactivo y tabla de frases
-# ---------------------------
-# Preparar datos para el gráfico 1
-total_pacientes = 41  # valor fijo según estudio
-comentario_ids = df[df["tipo"] == "Comentario/reflexión"]["num_entrevista"].unique()
-duda_ids = df[df["tipo"] == "Duda/pregunta"]["num_entrevista"].unique()
-union_ids = set(comentario_ids) | set(duda_ids)
 
-comentarios_count = len(comentario_ids)
-dudas_count = len(duda_ids)
-sin_registro = total_pacientes - len(union_ids)
 
-data = {
-    "tipo": ["Comentario/reflexión", "Duda/pregunta", "Sin interacción relevante"],
-    "Entrevistas": [comentarios_count, dudas_count, sin_registro]
-}
-df_plot = pd.DataFrame(data)
-df_plot["Porcentaje"] = df_plot["Entrevistas"] / total_pacientes * 100
-
-# Agregar los valores fijos para el tooltip
-fixed_total_frases = {
-    "Comentario/reflexión": 227,
-    "Duda/pregunta": 54,
-    "Sin interacción relevante": 347
-}
-df_plot["TotalFrases"] = df_plot["tipo"].map(fixed_total_frases)
-
-# Crear gráfico interactivo con Plotly Express
-fig1 = px.bar(
-    df_plot,
-    x="tipo",
-    y="Entrevistas",
-    text=df_plot["Porcentaje"].apply(lambda x: f"{x:.1f}%"),
-    hover_data={"TotalFrases": True, "Entrevistas": True},
-    color_discrete_sequence=["#34a3d3"] 
-)
-fig1.update_layout(
-    xaxis_title="",
-    title_text="Frecuencia de entrevistas por tipo de información recogida"
-)
-fig1.update_traces(textposition='outside')
-
-# Cargar dataset de frases irrelevantes (frasesfull.xlsx)
+# Cargar dataset de frases (mover carga arriba para evitar usar df_frases antes de definirlo)
 df_frases = pd.read_excel("frasesfull.xlsx")
 
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+# Cargar dataset de frases
+df_frases = pd.read_excel("frasesfull.xlsx")
+
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+# Cargar dataset de frases
+df_frases = pd.read_excel("frasesfull.xlsx")
+
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+
+# Cargar dataset de frases (se usa solo para la tabla/selección)
+df_frases = pd.read_excel("frasesfull.xlsx")
+
+# ---------------------------
+# Gráfico con dos ejes Y usando valores fijos para denominadores y conteos
+# ---------------------------
+# Valores fijos que nos has indicado
+fixed_total_frases = {
+    "Comentario/reflexión": 230,
+    "Duda/pregunta": 54,
+    "Sin interacción relevante": 351
+}
+# Denominadores / totales fijos
+total_frases = sum(fixed_total_frases.values())  # 230 + 54 + 351 = 635
+pacientes_totales = 41
+
+# Pacientes únicos (valores fijos que nos indicaste)
+unique_counts_fixed = {
+    "Comentario/reflexión": 37,
+    "Duda/pregunta": 23,
+    "Sin interacción relevante": 4
+}
+
+# Orden de categorías (mantener igual que en el resto del dashboard)
+tipos = ["Comentario/reflexión", "Duda/pregunta", "Sin interacción relevante"]
+
+# Valores para las trazas (se toman de los fijos)
+phrases_vals = [fixed_total_frases[t] for t in tipos]
+patients_vals = [unique_counts_fixed[t] for t in tipos]
+
+# Etiquetas % + valor absoluto en dos líneas: "X.X%\n(Y)"
+phrases_labels = [f"{(v / total_frases * 100):.1f}%\n({v})" for v in phrases_vals]
+patients_labels = [f"{(v / pacientes_totales * 100):.1f}%\n({v})" for v in patients_vals]
+
+# Hover text detallado (explicativo) usando los valores fijos como numerador/denominador
+hover_phrases = []
+hover_patients = []
+for i, t in enumerate(tipos):
+    v_f = phrases_vals[i]
+    pct_f = v_f / total_frases * 100
+    hover_phrases.append(
+        f"<b>Categoría:</b> {t}<br>"
+        f"<b>Métrica:</b> Frases en categoría: {v_f:,}<br>"
+        f"<b>Porcentaje del total de frases:</b> {pct_f:.1f}%"
+    )
+
+    v_p = patients_vals[i]
+    pct_p = v_p / pacientes_totales * 100
+    hover_patients.append(
+        f"<b>Categoría:</b> {t}<br>"
+        f"<b>Métrica:</b> Pacientes únicos en categoría: {v_p:,}<br>"
+        f"<b>Porcentaje del total de pacientes:</b> {pct_p:.1f}%"
+    )
+
+# Crear figura con dos trazas (barras) y dos ejes Y
+trace_phrases = go.Bar(
+    x=tipos,
+    y=phrases_vals,
+    name="Frases (N: 635)",
+    text=phrases_labels,
+    textposition="outside",
+    hovertext=hover_phrases,
+    hoverinfo="text",
+    marker=dict(line=dict(width=0)),
+    offsetgroup=0
+)
+
+trace_patients = go.Bar(
+    x=tipos,
+    y=patients_vals,
+    name="Pacientes únicos (N: 41)",
+    text=patients_labels,
+    textposition="outside",
+    hovertext=hover_patients,
+    hoverinfo="text",
+    yaxis="y2",  # asignar al eje Y2 (derecho)
+    marker=dict(line=dict(width=0)),
+    offsetgroup=1
+)
+
+fig = go.Figure(data=[trace_phrases, trace_patients])
+
+# Layout con segundo eje Y a la derecha
+fig.update_layout(
+    title="Frases (eje izq) vs Pacientes únicos (eje der) por tipo de información — denominadores fijos",
+    xaxis=dict(title=""),
+    yaxis=dict(
+        title="Cantidad de frases (N: 635)",
+        showgrid=True,
+        rangemode="tozero"
+    ),
+    yaxis2=dict(
+        title="Pacientes únicos (N: 41)",
+        overlaying="y",
+        side="right",
+        showgrid=False,
+        rangemode="tozero"
+    ),
+    barmode="group",
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    margin=dict(t=90, b=110, l=60, r=90),
+    uniformtext_minsize=9,
+    uniformtext_mode='hide'
+)
+
+# Ajustes de texto para mejorar la legibilidad
+fig.update_traces(textfont=dict(size=11, family="Arial"))
+
+# Mostrar en Streamlit
 st.markdown('<h3 style="text-align: center;">Categorización General y Ejemplos de Frases</h3>', unsafe_allow_html=True)
 col_chart, col_table = st.columns(2)
 with col_chart:
-    st.plotly_chart(fig1, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 with col_table:
     selected_tipo_frase = st.selectbox("Selecciona el tipo de frase", df_frases["tipo"].unique())
     filtered_frases = df_frases[df_frases["tipo"] == selected_tipo_frase].reset_index(drop=True)
     st.dataframe(filtered_frases[["frase"]].reset_index(drop=True), use_container_width=True)
+
+
+
+
 
 # ---------------------------
 # 3. Reorganización de Gráficos 2 y 3 con sus Tablas
@@ -165,7 +259,7 @@ st.markdown("## Análisis Detallado por Categorías")
 
 st.header("Frases y pacientes por categoría")
 
-st.write("**En una segunda fase, la clasificación se profundizó aún más utilizando inteligencia artificial.**")
+st.write("**En una segunda fase, la clasificación se profundizó aún más utilizando Grandes Modelos de Lenguaje (LLM)**")
 st.subheader("❓ Clasificación de dudas/preguntas")
 st.write("""
 Las frases que reflejaban **necesidad de información (54 en total)** fueron categorizadas con base en la guía de **Preguntas Frecuentes sobre Prótesis Total de Rodilla**, que abarca los siguientes temas:
@@ -238,7 +332,7 @@ st.markdown("### Reflexiones/Comentarios")
 st.subheader("📌 Clasificación de comentarios/reflexiones")
 
 st.write("""
-Para las frases en las que los pacientes expresaban reflexiones o comentarios, que fueron **225**, se establecieron las siguientes categorías:
+Para las frases en las que los pacientes expresaban reflexiones o comentarios, que fueron **230**, se establecieron las siguientes categorías:
 
 ✅ **Dolor/Complicaciones:** Relacionadas con dolor, sufrimiento o complicaciones físicas derivadas de la rodilla.  
 ✅ **Deseo de operarse:** Expresan urgencia por la cirugía o críticas sobre la espera prolongada.  
