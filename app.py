@@ -43,8 +43,23 @@ df_frases['Tiporeflexión'] = df_frases['categorias2'].map(map_cat2)
 # ---------------------------
 # Configuración de la página y encabezados
 # ---------------------------
-st.set_page_config(page_title="Dashboard de Análisis de Texto", layout="wide")
-st.title("📊 Dashboard de KneeChat")
+st.set_page_config(page_title="📊Dashboard de Análisis de Texto", layout="wide")
+
+# ---------------------------
+# Cabecera con logo + título
+# ---------------------------
+# Asegúrate de que 'chatbot111.png' esté en la misma carpeta que tu script,
+# o pon la ruta correcta (por ejemplo "assets/chatbot111.png")
+col_title, col_logo = st.columns([14, 15])
+
+with col_logo:
+    # Muestra el logo; ajusta 'width' si lo ves muy grande/pequeño
+    st.image("chatbot111.png", width=200)
+
+with col_title:
+    st.title("Dashboard de KneeChat")
+    st.markdown("_Proyecto:_ Empleo de canales de comunicación digitales para la evaluación y detección de necesidades de información en pacientes pendientes de Artroplastia Total de Rodilla.")
+
 
 st.header("Información del estudio")
 st.write("""
