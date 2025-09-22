@@ -50,15 +50,25 @@ st.set_page_config(page_title="📊Dashboard de Análisis de Texto", layout="wid
 # ---------------------------
 # Asegúrate de que 'chatbot111.png' esté en la misma carpeta que tu script,
 # o pon la ruta correcta (por ejemplo "assets/chatbot111.png")
-col_title, col_logo = st.columns([14, 15])
+# Logo centrado arriba
+import base64
+from pathlib import Path
+import streamlit as st
 
-with col_logo:
-    # Muestra el logo; ajusta 'width' si lo ves muy grande/pequeño
-    st.image("chatbot111.png", width=200)
+img_path = Path("chatbot111.png")
+if img_path.exists():
+    b64 = base64.b64encode(img_path.read_bytes()).decode()
+    data_uri = f"data:image/png;base64,{b64}"
+    st.markdown(f"<div style='text-align:center;'><img src='{data_uri}' width='140'></div>", unsafe_allow_html=True)
+else:
+    st.error("Imagen no encontrada: chatbot111.png")
 
-with col_title:
-    st.title("Dashboard de KneeChat")
-    st.markdown("_Proyecto:_ Empleo de canales de comunicación digitales para la evaluación y detección de necesidades de información en pacientes pendientes de Artroplastia Total de Rodilla.")
+# Título centrado debajo del logo
+st.markdown(
+    "<h1 style='text-align: center; font-size:calc(24px + 1.2vw); margin:6px 0; line-height:1.1;'>📊 Dashboard de KneeChat 🦿</h1>",
+    unsafe_allow_html=True
+)
+
 
 
 st.header("Información del estudio")
@@ -119,23 +129,6 @@ col_card4.markdown(card_style_general.format(title="Preguntas o dudas", value=54
 
 
 
-# Cargar dataset de frases (mover carga arriba para evitar usar df_frases antes de definirlo)
-df_frases = pd.read_excel("frasesfull.xlsx")
-
-import pandas as pd
-import plotly.express as px
-import streamlit as st
-
-# Cargar dataset de frases
-df_frases = pd.read_excel("frasesfull.xlsx")
-
-import pandas as pd
-import plotly.express as px
-import streamlit as st
-
-# Cargar dataset de frases
-df_frases = pd.read_excel("frasesfull.xlsx")
-
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -144,37 +137,31 @@ import streamlit as st
 df_frases = pd.read_excel("frasesfull.xlsx")
 
 # ---------------------------
-# Gráfico con dos ejes Y usando valores fijos para denominadores y conteos
+# Valores fijos (tal como indicaste)
 # ---------------------------
-# Valores fijos que nos has indicado
 fixed_total_frases = {
     "Comentario/reflexión": 230,
     "Duda/pregunta": 54,
     "Sin interacción relevante": 351
 }
-# Denominadores / totales fijos
-total_frases = sum(fixed_total_frases.values())  # 230 + 54 + 351 = 635
+total_frases = sum(fixed_total_frases.values())  # 635
 pacientes_totales = 41
 
-# Pacientes únicos (valores fijos que nos indicaste)
 unique_counts_fixed = {
     "Comentario/reflexión": 37,
     "Duda/pregunta": 23,
     "Sin interacción relevante": 4
 }
 
-# Orden de categorías (mantener igual que en el resto del dashboard)
 tipos = ["Comentario/reflexión", "Duda/pregunta", "Sin interacción relevante"]
 
-# Valores para las trazas (se toman de los fijos)
+# Valores para trazas y etiquetas (fijos)
 phrases_vals = [fixed_total_frases[t] for t in tipos]
 patients_vals = [unique_counts_fixed[t] for t in tipos]
-
-# Etiquetas % + valor absoluto en dos líneas: "X.X%\n(Y)"
 phrases_labels = [f"{(v / total_frases * 100):.1f}%\n({v})" for v in phrases_vals]
 patients_labels = [f"{(v / pacientes_totales * 100):.1f}%\n({v})" for v in patients_vals]
 
-# Hover text detallado (explicativo) usando los valores fijos como numerador/denominador
+# Hover text explicativo (fijos)
 hover_phrases = []
 hover_patients = []
 for i, t in enumerate(tipos):
@@ -183,7 +170,8 @@ for i, t in enumerate(tipos):
     hover_phrases.append(
         f"<b>Categoría:</b> {t}<br>"
         f"<b>Métrica:</b> Frases en categoría: {v_f:,}<br>"
-        f"<b>Porcentaje del total de frases:</b> {pct_f:.1f}%"
+        f"<b>Denominador (fijo):</b> total de frases = {total_frases:,}<br>"
+        f"<b>%:</b> {v_f:,} / {total_frases:,} = {pct_f:.1f}%"
     )
 
     v_p = patients_vals[i]
@@ -191,65 +179,69 @@ for i, t in enumerate(tipos):
     hover_patients.append(
         f"<b>Categoría:</b> {t}<br>"
         f"<b>Métrica:</b> Pacientes únicos en categoría: {v_p:,}<br>"
-        f"<b>Porcentaje del total de pacientes:</b> {pct_p:.1f}%"
+        f"<b>Denominador (fijo):</b> total de pacientes = {pacientes_totales:,}<br>"
+        f"<b>%:</b> {v_p:,} / {pacientes_totales:,} = {pct_p:.1f}%"
     )
 
-# Crear figura con dos trazas (barras) y dos ejes Y
-trace_phrases = go.Bar(
-    x=tipos,
-    y=phrases_vals,
-    name="Frases (N: 635)",
-    text=phrases_labels,
-    textposition="outside",
-    hovertext=hover_phrases,
-    hoverinfo="text",
-    marker=dict(line=dict(width=0)),
-    offsetgroup=0
-)
+# -----------------------------------------
+# Selector para alternar entre Frases y Pacientes
+# -----------------------------------------
+st.markdown('<h3 style="text-align: center;">Categorización General y Ejemplos de Frases</h3>', unsafe_allow_html=True)
 
-trace_patients = go.Bar(
-    x=tipos,
-    y=patients_vals,
-    name="Pacientes únicos (N: 41)",
-    text=patients_labels,
-    textposition="outside",
-    hovertext=hover_patients,
-    hoverinfo="text",
-    yaxis="y2",  # asignar al eje Y2 (derecho)
-    marker=dict(line=dict(width=0)),
-    offsetgroup=1
-)
+# Selector (botón) — radio es apropiado para alternar vistas
+choice = st.radio("Mostrar:", ["Frases", "Pacientes"], index=0, horizontal=True)
 
-fig = go.Figure(data=[trace_phrases, trace_patients])
+# Construir figura según elección (solo una métrica visible)
+if choice == "Frases":
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=tipos,
+            y=phrases_vals,
+            name=f"Frases (N: {total_frases})",
+            text=phrases_labels,
+            textposition="outside",
+            hovertext=hover_phrases,
+            hoverinfo="text",
+            marker=dict(line=dict(width=0))
+        )
+    )
+    fig.update_layout(
+        title="Frases por tipo (N: 635)",
+        xaxis=dict(title=""),
+        yaxis=dict(title=f"Cantidad de frases (N: {total_frases})", rangemode="tozero", showgrid=True),
+        margin=dict(t=90, b=110, l=60, r=60),
+        uniformtext_minsize=9,
+        uniformtext_mode='hide'
+    )
 
-# Layout con segundo eje Y a la derecha
-fig.update_layout(
-    title="Frases (eje izq) vs Pacientes únicos (eje der) por tipo de información — denominadores fijos",
-    xaxis=dict(title=""),
-    yaxis=dict(
-        title="Cantidad de frases (N: 635)",
-        showgrid=True,
-        rangemode="tozero"
-    ),
-    yaxis2=dict(
-        title="Pacientes únicos (N: 41)",
-        overlaying="y",
-        side="right",
-        showgrid=False,
-        rangemode="tozero"
-    ),
-    barmode="group",
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-    margin=dict(t=90, b=110, l=60, r=90),
-    uniformtext_minsize=9,
-    uniformtext_mode='hide'
-)
+else:  # Pacientes
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=tipos,
+            y=patients_vals,
+            name=f"Pacientes únicos (N: {pacientes_totales})",
+            text=patients_labels,
+            textposition="outside",
+            hovertext=hover_patients,
+            hoverinfo="text",
+            marker=dict(line=dict(width=0))
+        )
+    )
+    fig.update_layout(
+        title="Pacientes únicos por tipo (N: 41)",
+        xaxis=dict(title=""),
+        yaxis=dict(title=f"Pacientes únicos (N: {pacientes_totales})", rangemode="tozero", showgrid=True),
+        margin=dict(t=90, b=110, l=60, r=60),
+        uniformtext_minsize=9,
+        uniformtext_mode='hide'
+    )
 
-# Ajustes de texto para mejorar la legibilidad
+# Ajuste de fuente de etiqueta multilínea para que quepa mejor
 fig.update_traces(textfont=dict(size=11, family="Arial"))
 
-# Mostrar en Streamlit
-st.markdown('<h3 style="text-align: center;">Categorización General y Ejemplos de Frases</h3>', unsafe_allow_html=True)
+# Mostrar gráfico y tabla lado a lado
 col_chart, col_table = st.columns(2)
 with col_chart:
     st.plotly_chart(fig, use_container_width=True)
@@ -262,6 +254,8 @@ with col_table:
 
 
 
+
+
 # ---------------------------
 # 3. Reorganización de Gráficos 2 y 3 con sus Tablas
 # ---------------------------
@@ -269,7 +263,6 @@ with col_table:
 st.subheader("--------------------------------------------------------")
 
 
-st.markdown("## Análisis Detallado por Categorías")
 
 
 st.header("Frases y pacientes por categoría")
@@ -334,8 +327,7 @@ with col_dudas_table:
         "Selecciona una categoría de dudas:",
         df["DudasFrecuentes"].dropna().unique()
     )
-    df_dudas_table = df[df["DudasFrecuentes"] == categoria_dudas][["num_entrevista", "frase"]]
-    df_dudas_table = df_dudas_table.set_index("num_entrevista")
+    df_dudas_table = df[df["DudasFrecuentes"] == categoria_dudas][[ "frase"]]
     st.dataframe(df_dudas_table, use_container_width=True)
 
 st.subheader("--------------------------------------------------------")
@@ -397,8 +389,7 @@ with col_reflexion_table:
         "Selecciona una categoría de comentario:",
         df["Tiporeflexión"].dropna().unique()
     )
-    df_reflexion_table = df[df["Tiporeflexión"] == categoria_reflexion][["num_entrevista", "frase"]]
-    df_reflexion_table = df_reflexion_table.set_index("num_entrevista")
+    df_reflexion_table = df[df["Tiporeflexión"] == categoria_reflexion][[ "frase"]]
     st.dataframe(df_reflexion_table, use_container_width=True)
 
 
@@ -443,7 +434,10 @@ df_grouped['Sentimiento'] = df_grouped['mean_robertuito'].apply(clasificar_senti
 
 # Calcular el intervalo de confianza (IC ~95%)
 df_grouped['ci_robertuito'] = 1.96 * df_grouped['sem_robertuito']
+idx_max_ci = df_grouped['ci_robertuito'].idxmax()
 
+# Eliminar ese registro del dataframe
+df_grouped = df_grouped.drop(idx_max_ci).reset_index(drop=True)
 # Mapeo de colores para cada categoría de sentimiento
 color_dict = {
     "Muy negativo": "darkred",
@@ -453,25 +447,28 @@ color_dict = {
     "Muy positivo": "darkgreen"
 }
 
-df_grouped['point_size'] = 12
+df_grouped['point_size'] = df_grouped['count_frases'] * 2  # Ajusta el factor de escala según sea necesario
 # Crear gráfico interactivo con Plotly Express
+df_sorted = df_grouped.sort_values("mean_robertuito").reset_index(drop=True)
+
+# Crear el gráfico con el dataframe ordenado
 fig_sentimiento = px.scatter(
-    df_grouped,
-    x=df_grouped.index,
+    df_sorted,
+    x=df_sorted.index,  # ahora el índice ya representa el orden
     y="mean_robertuito",
     color="Sentimiento",
     color_discrete_map=color_dict,
     error_y="ci_robertuito",
     labels={
-        "num_entrevista": "Número de Entrevista",
+        "index": "Entrevistas ordenadas por sentimiento",  
         "mean_robertuito": "Puntuación de Sentimiento"
     },
-    title="Comparación de Sentimientos Promedio por Entrevista (IC ~95%)",
-    size= "point_size",
+    title="Sentimientos Promedio por Entrevista (IC ~95%)",
+    size="point_size",
     hover_data={
         "count_frases": True,
         "mean_robertuito": ':.2f',
-        "num_entrevista": False  # ya se muestra en el eje x
+        "num_entrevista": True  # mostramos el número real de entrevista en hover
     }
 )
 
@@ -479,6 +476,25 @@ fig_sentimiento.update_layout(
     title_x=0.4  # Centra el título horizontalmente
 
 )
+
+
+fig_sentimiento.update_layout(
+    title_x=0.1,
+    legend_title_text="",   # centra el título
+    legend=dict(
+        orientation="h",   # horizontal -> todos los elementos en una fila
+        xanchor="left",  # centra la fila de la leyenda
+        yanchor="middle",
+        x=0.0,
+        y=1.1,
+        traceorder="normal", 
+        bgcolor="rgba(0,0,0,0)",
+        borderwidth=0
+    ),
+    margin=dict(t=140)  # deja espacio arriba para título + leyenda
+)
+
+
 # Agregar líneas horizontales de referencia
 fig_sentimiento.add_hline(y=0.3, line_dash="dash", line_color="green", opacity=0.3)
 fig_sentimiento.add_hline(y=0, line_dash="dash", line_color="grey", opacity=0.3)
@@ -568,11 +584,25 @@ fig_sentimiento_bar = px.bar(
     hover_data={"Cantidad de frases": True}
 )
 
+fig_sentimiento_bar.update_layout(
+    title="",
+    legend_title_text="",
+    legend=dict(
+        orientation="h",   # horizontal -> todos los elementos en una fila
+        xanchor="left",  # centra la fila de la leyenda
+        yanchor="middle",
+        x=0.0,
+        y=1,
+        traceorder="normal", 
+        bgcolor="rgba(0,0,0,0)",
+        borderwidth=0
+    )# deja espacio arriba para título + leyenda
+)
+
 # Configurar el gráfico para que sea 100% apilado
 fig_sentimiento_bar.update_layout(
     barmode="stack",
-    barnorm="percent",
-    title_x=0.4
+    barnorm="percent"
 )
 
 # Actualizar formato de etiquetas y tooltips:
