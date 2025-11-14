@@ -48,20 +48,20 @@ st.set_page_config(page_title="📊Dashboard de Análisis de Texto", layout="wid
 # ---------------------------
 # Cabecera con logo + título
 # ---------------------------
-# Asegúrate de que 'chatbot111.png' esté en la misma carpeta que tu script,
-# o pon la ruta correcta (por ejemplo "assets/chatbot111.png")
+# Asegúrate de que 'chatbotlogo.png' esté en la misma carpeta que tu script,
+# o pon la ruta correcta (por ejemplo "assets/chatbotlogo.png")
 # Logo centrado arriba
 import base64
 from pathlib import Path
 import streamlit as st
 
-img_path = Path("chatbot111.png")
+img_path = Path("chatbotlogo.png")
 if img_path.exists():
     b64 = base64.b64encode(img_path.read_bytes()).decode()
     data_uri = f"data:image/png;base64,{b64}"
     st.markdown(f"<div style='text-align:center;'><img src='{data_uri}' width='140'></div>", unsafe_allow_html=True)
 else:
-    st.error("Imagen no encontrada: chatbot111.png")
+    st.error("Imagen no encontrada: chatbotlogo.png")
 
 # Título centrado debajo del logo
 st.markdown(
