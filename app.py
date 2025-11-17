@@ -7,38 +7,10 @@ import plotly.express as px
 # ---------------------------
 # Cargar dataset principal y mapeos
 # ---------------------------
-df = pd.read_excel("bd_c_gpt.xlsx")
-df_frases = pd.read_excel("frasesfull.xlsx")
+df = pd.read_excel("Dataset kneechat - ES.xlsx")
+df = df[df['tipo'] != 'Interacción Irrelevante']
 
-
-# Diccionario de mapeo para categorias1 (códigos del 1 al 10)
-DudasFrecuentes = {
-    1: "Info general",          
-    2: "Preparación para la cirugía",           
-    3: "Cirugía/Anestesia",     
-    4: "Proceso de recuperación",          
-    5: "Manejo dolor",          
-    6: "Complicaciones",        
-    7: "Cuidados postop",       
-    8: "Expectativas",          
-    9: "Recursos Adicionales",              
-    10: "Logística y tiempos de espera"             
-}
-
-df['DudasFrecuentes'] = df['categorias1'].map(DudasFrecuentes)
-df_frases['DudasFrecuentes'] = df_frases['categorias1'].map(DudasFrecuentes)
-
-# Diccionario de mapeo para categorias2 (códigos del 1 al 6)
-map_cat2 = {
-    1: "Dolor/Complicaciones",  
-    2: "Deseo de operarse",         
-    3: "Miedo/preocupación/Ansiedad",        
-    4: "Confianza y positividad",             
-    5: "Rutina diaria",               
-    6: "Otros"                  
-}
-df['Tiporeflexión'] = df['categorias2'].map(map_cat2)
-df_frases['Tiporeflexión'] = df_frases['categorias2'].map(map_cat2)
+df_frases = pd.read_excel("Dataset kneechat - ES.xlsx")
 
 # ---------------------------
 # Configuración de la página y encabezados
