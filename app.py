@@ -106,7 +106,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # Cargar dataset de frases (se usa solo para la tabla/selección)
-df_frases = pd.read_excel("frasesfull.xlsx")
+df_frases = pd.read_excel("Dataset kneechat - ES.xlsx")
 
 # ---------------------------
 # Valores fijos (tal como indicaste)
