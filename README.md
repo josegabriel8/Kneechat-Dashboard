@@ -48,12 +48,8 @@ Este tablero analiza datos de 41 entrevistas con pacientes en espera de cirugía
 * Robertuito (modelo de análisis de sentimiento en español) 
 
 ## Datos
-Los datos utilizados (disponibles bajo solicitud) incluyen:
-
-* bd_c_gpt.xlsx: Dataset principal con frases categorizadas
-
-* frasesfull.xlsx: Ejemplos completos de interacciones
-
+Los datos utilizados están disponibles en un repositorio público de Zenodo con el siguiente DOI:
+Zapatero Herrera, M., Rivas Ruiz, F., & Escarramán Reyes, J. G. (2025). KneechatData: Conversational Dataset from Surgical Patient Interviews [Data set]. Zenodo. https://doi.org/10.5281/zenodo.17544113
 
 
 
